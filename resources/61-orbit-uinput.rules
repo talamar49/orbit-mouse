@@ -1,0 +1,2 @@
+# Orbit's virtual keyboard/mouse output. Scoped to the local plugdev group.
+KERNEL=="uinput", GROUP="plugdev", MODE="0660", OPTIONS+="static_node=uinput"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Orbit Mouse Studio
+Comment=Configure Logitech mouse buttons and haptics
+Exec=env ELECTRON_DISABLE_SANDBOX=1 /home/talamar/orbit-mouse/node_modules/.bin/electron --class=orbit-mouse /home/talamar/orbit-mouse
+Icon=/home/talamar/orbit-mouse/resources/orbit.png
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupNotify=true
+StartupWMClass=orbit-mouse
