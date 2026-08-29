@@ -1,5 +1,5 @@
 import { Keyboard, Radio } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CustomActionDefinition } from '../../../shared/device'
 
 interface CustomActionFormProps {
@@ -14,20 +14,72 @@ const codeNames: Record<string, string> = {
   ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ArrowUp: 'UP', ArrowDown: 'DOWN',
   PrintScreen: 'PRINT', Minus: 'MINUS', Equal: 'EQUAL', BracketLeft: 'LEFTBRACE', BracketRight: 'RIGHTBRACE',
   Semicolon: 'SEMICOLON', Quote: 'APOSTROPHE', Backquote: 'GRAVE', Backslash: 'BACKSLASH',
-  Comma: 'COMMA', Period: 'DOT', Slash: 'SLASH'
+  Comma: 'COMMA', Period: 'DOT', Slash: 'SLASH', CapsLock: 'CAPSLOCK', ContextMenu: 'MENU',
+  ScrollLock: 'SCROLLLOCK', Pause: 'PAUSE', NumLock: 'NUMLOCK', NumpadAdd: 'KPPLUS',
+  NumpadSubtract: 'KPMINUS', NumpadMultiply: 'KPASTERISK', NumpadDivide: 'KPSLASH',
+  NumpadDecimal: 'KPDOT', NumpadComma: 'KPCOMMA', NumpadEnter: 'KPENTER', NumpadEqual: 'KPEQUAL',
+  AudioVolumeMute: 'MUTE', AudioVolumeUp: 'VOLUMEUP', AudioVolumeDown: 'VOLUMEDOWN',
+  MediaPlayPause: 'PLAYPAUSE', MediaStop: 'STOPCD', MediaTrackNext: 'NEXTSONG', MediaTrackPrevious: 'PREVIOUSSONG',
+  MediaSelect: 'MEDIA', Eject: 'EJECTCD', BrowserBack: 'BACK', BrowserForward: 'FORWARD',
+  BrowserRefresh: 'REFRESH', BrowserStop: 'STOP', BrowserSearch: 'SEARCH', BrowserFavorites: 'FAVORITES',
+  BrowserHome: 'HOMEPAGE', LaunchMail: 'MAIL', LaunchApp1: 'PROG1', LaunchApp2: 'PROG2',
+  Power: 'POWER', Sleep: 'SLEEP', WakeUp: 'WAKEUP', IntlBackslash: '102ND', IntlRo: 'RO', IntlYen: 'YEN',
+  Convert: 'HENKAN', NonConvert: 'MUHENKAN', KanaMode: 'KATAKANAHIRAGANA', Lang1: 'HANGEUL', Lang2: 'HANJA',
+  Undo: 'UNDO', Cut: 'CUT', Copy: 'COPY', Paste: 'PASTE', Find: 'FIND', Open: 'OPEN', Help: 'HELP',
+  Select: 'SELECT', Again: 'AGAIN', Props: 'PROPS'
 }
 
-function shortcutFromEvent(event: KeyboardEvent): string | null {
-  const modifiers = [
-    event.ctrlKey ? 'CTRL' : '', event.altKey ? 'ALT' : '',
-    event.shiftKey ? 'SHIFT' : '', event.metaKey ? 'SUPER' : ''
-  ].filter(Boolean)
-  if (['ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight', 'MetaLeft', 'MetaRight'].includes(event.code)) return null
+const keyNames: Record<string, string> = {
+  ' ': 'SPACE', Enter: 'ENTER', Escape: 'ESC', Esc: 'ESC', Tab: 'TAB', Backspace: 'BACKSPACE',
+  Delete: 'DELETE', Insert: 'INSERT', Home: 'HOME', End: 'END', PageUp: 'PAGEUP', PageDown: 'PAGEDOWN',
+  ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ArrowUp: 'UP', ArrowDown: 'DOWN', PrintScreen: 'PRINT',
+  '-': 'MINUS', '_': 'MINUS', '=': 'EQUAL', '+': 'EQUAL', '[': 'LEFTBRACE', '{': 'LEFTBRACE',
+  ']': 'RIGHTBRACE', '}': 'RIGHTBRACE', ';': 'SEMICOLON', ':': 'SEMICOLON', "'": 'APOSTROPHE',
+  '"': 'APOSTROPHE', '`': 'GRAVE', '~': 'GRAVE', '\\': 'BACKSLASH', '|': 'BACKSLASH',
+  ',': 'COMMA', '<': 'COMMA', '.': 'DOT', '>': 'DOT', '/': 'SLASH', '?': 'SLASH',
+  CapsLock: 'CAPSLOCK', NumLock: 'NUMLOCK', ScrollLock: 'SCROLLLOCK', Pause: 'PAUSE',
+  ContextMenu: 'MENU', AudioVolumeMute: 'MUTE', AudioVolumeUp: 'VOLUMEUP', AudioVolumeDown: 'VOLUMEDOWN',
+  MediaPlayPause: 'PLAYPAUSE', MediaStop: 'STOPCD', MediaTrackNext: 'NEXTSONG', MediaTrackPrevious: 'PREVIOUSSONG'
+}
+
+const modifierOrder = ['CTRL', 'ALT', 'SHIFT', 'SUPER']
+
+function pureModifierName(event: KeyboardEvent): string | null {
+  if (event.key === 'Control' || event.code === 'ControlLeft' || event.code === 'ControlRight') return 'CTRL'
+  if (event.key === 'Alt' || event.key === 'AltGraph' || event.code === 'AltLeft' || event.code === 'AltRight') return 'ALT'
+  if (event.key === 'Shift' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') return 'SHIFT'
+  if (event.key === 'Meta' || event.key === 'Super' || event.key === 'OS' || ['MetaLeft', 'MetaRight', 'OSLeft', 'OSRight'].includes(event.code)) return 'SUPER'
+  return null
+}
+
+function modifierNames(event: KeyboardEvent, held: ReadonlySet<string> = new Set()): string[] {
+  const modifiers = new Set(held)
+  if (event.ctrlKey) modifiers.add('CTRL')
+  if (event.altKey) modifiers.add('ALT')
+  if (event.shiftKey) modifiers.add('SHIFT')
+  if (event.metaKey) modifiers.add('SUPER')
+  const direct = pureModifierName(event)
+  if (direct) modifiers.add(direct)
+  return modifierOrder.filter((modifier) => modifiers.has(modifier))
+}
+
+function keyName(event: KeyboardEvent): string | null {
   let key = codeNames[event.code]
   if (!key && /^Key[A-Z]$/.test(event.code)) key = event.code.slice(3)
   if (!key && /^Digit[0-9]$/.test(event.code)) key = event.code.slice(5)
-  if (!key && /^F(?:[1-9]|1[0-2])$/.test(event.code)) key = event.code
-  return key ? [...modifiers, key].join('+') : null
+  if (!key && /^Numpad[0-9]$/.test(event.code)) key = `KP${event.code.slice(6)}`
+  if (!key && /^F(?:[1-9]|1[0-9]|2[0-4])$/.test(event.code)) key = event.code
+  if (!key) key = keyNames[event.key]
+  if (!key && /^[a-z0-9]$/i.test(event.key)) key = event.key.toUpperCase()
+  if (!key && /^F(?:[1-9]|1[0-9]|2[0-4])$/i.test(event.key)) key = event.key.toUpperCase()
+  if (!key && event.code !== 'Unidentified' && /^[A-Za-z][A-Za-z0-9]+$/.test(event.code)) key = event.code.toUpperCase()
+  return key ?? null
+}
+
+function shortcutFromEvent(event: KeyboardEvent, held: ReadonlySet<string>): string | null {
+  if (pureModifierName(event)) return null
+  const key = keyName(event)
+  return key ? [...modifierNames(event, held), key].join('+') : null
 }
 
 export function CustomActionForm({ initialAction, submitLabel, onSubmit }: CustomActionFormProps): React.JSX.Element {
@@ -37,21 +89,54 @@ export function CustomActionForm({ initialAction, submitLabel, onSubmit }: Custo
   const [executable, setExecutable] = useState(initialAction?.type === 'launch' ? initialAction.executable : '')
   const [argumentsText, setArgumentsText] = useState(initialAction?.type === 'launch' ? initialAction.args.join('\n') : '')
   const [recording, setRecording] = useState(false)
+  const [recordingPreview, setRecordingPreview] = useState('')
   const [error, setError] = useState('')
+  const recordButton = useRef<HTMLButtonElement>(null)
+  const heldModifiers = useRef(new Set<string>())
 
   useEffect(() => {
     if (!recording) return
     const capture = (event: KeyboardEvent): void => {
       event.preventDefault()
       event.stopPropagation()
-      const captured = shortcutFromEvent(event)
-      if (!captured) return
+      const directModifier = pureModifierName(event)
+      if (directModifier) {
+        heldModifiers.current.add(directModifier)
+        setRecordingPreview(modifierOrder.filter((modifier) => heldModifiers.current.has(modifier)).join('+') + '+…')
+        setError('')
+        return
+      }
+      const captured = shortcutFromEvent(event, heldModifiers.current)
+      if (!captured) {
+        const modifiers = modifierNames(event, heldModifiers.current)
+        if (modifiers.length) setRecordingPreview(modifiers.join('+') + '+…')
+        else setError(`Orbit could not recognize “${event.key || event.code}”. Try another key.`)
+        return
+      }
       setShortcut(captured)
+      setRecordingPreview('')
+      setRecording(false)
+      setError('')
+    }
+    const release = (event: KeyboardEvent): void => {
+      const directModifier = pureModifierName(event)
+      if (!directModifier || !heldModifiers.current.has(directModifier)) return
+      event.preventDefault()
+      event.stopPropagation()
+      const modifierChord = modifierOrder.filter((modifier) => heldModifiers.current.has(modifier)).join('+')
+      heldModifiers.current.clear()
+      setShortcut(modifierChord)
+      setRecordingPreview('')
       setRecording(false)
       setError('')
     }
     window.addEventListener('keydown', capture, true)
-    return () => window.removeEventListener('keydown', capture, true)
+    window.addEventListener('keyup', release, true)
+    return () => {
+      window.removeEventListener('keydown', capture, true)
+      window.removeEventListener('keyup', release, true)
+      heldModifiers.current.clear()
+    }
   }, [recording])
 
   const submit = (): void => {
@@ -86,8 +171,23 @@ export function CustomActionForm({ initialAction, submitLabel, onSubmit }: Custo
           <span>Shortcut</span>
           <div className={`shortcut-recorder ${recording ? 'recording' : ''}`}>
             <Keyboard size={17} />
-            <input value={shortcut} onChange={(event) => setShortcut(event.target.value)} placeholder={recording ? 'Press your shortcut…' : 'CTRL+ALT+T'} aria-label="Keyboard shortcut" />
-            <button onClick={() => setRecording((current) => !current)} type="button"><Radio size={14} />{recording ? 'Listening…' : 'Record'}</button>
+            <input value={recording && recordingPreview ? recordingPreview : shortcut} onChange={(event) => setShortcut(event.target.value)} placeholder={recording ? 'Press your shortcut…' : 'CTRL+SHIFT+K'} aria-label="Keyboard shortcut" readOnly={recording} />
+            <button
+              ref={recordButton}
+              onClick={() => {
+                setRecording((current) => {
+                  const next = !current
+                  if (next) {
+                    heldModifiers.current.clear()
+                    setRecordingPreview('')
+                    setError('')
+                    window.setTimeout(() => recordButton.current?.focus(), 0)
+                  }
+                  return next
+                })
+              }}
+              type="button"
+            ><Radio size={14} />{recording ? 'Listening…' : 'Record'}</button>
           </div>
           <small>{recording ? 'Press the complete combination now.' : 'Click Record, then press the keys together. Manual entry is also supported.'}</small>
         </div>

@@ -17,7 +17,9 @@ export class DeviceRegistry {
 
   async discover(): Promise<DeviceSnapshot[]> {
     const results = await Promise.allSettled(this.adapters.map((adapter) => adapter.discover()))
-    const devices = results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+    const devices = results.flatMap((result, index) => result.status === 'fulfilled'
+      ? result.value.map((device) => ({ ...device, actions: [...(device.actions ?? []), ...(this.adapters[index].actionDefinitions ?? [])] }))
+      : [])
     const nextDeviceAdapters = new Map<string, DeviceAdapter>()
     for (const device of devices) {
       const adapter = this.adapters.find((candidate) => candidate.id === device.adapterId)
@@ -34,8 +36,21 @@ export class DeviceRegistry {
       name: adapter.name ?? adapter.id,
       source: communityIds.has(adapter.id) ? 'community' : 'core',
       deviceKinds: [...(adapter.deviceKinds ?? ['mouse'])],
-      supportedModels: [...(adapter.supportedModels ?? [])]
+      supportedModels: [...(adapter.supportedModels ?? [])],
+      contributedActions: [...(adapter.actionDefinitions ?? [])]
     }))
+  }
+
+  isDriverAction(deviceId: string, actionId: string): boolean {
+    return Boolean(this.deviceAdapters.get(deviceId)?.actionDefinitions?.some((action) => action.id === actionId))
+  }
+
+  async runAction(deviceId: string, actionId: string): Promise<void> {
+    const adapter = this.deviceAdapters.get(deviceId)
+    if (!adapter?.actionDefinitions?.some((action) => action.id === actionId) || !adapter.runAction) {
+      throw new Error('This device driver does not provide that action.')
+    }
+    await adapter.runAction(deviceId, actionId)
   }
 
   async saveSettings(deviceId: string, settings: DeviceSettings): Promise<void> {

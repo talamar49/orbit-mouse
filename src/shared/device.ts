@@ -22,6 +22,41 @@ export interface DeviceCapability {
   writable: boolean
 }
 
+export interface DeviceActionDefinition {
+  id: string
+  label: string
+  detail: string
+  category?: string
+}
+
+export interface VisualControlDefinition {
+  id: string
+  label: string
+  type: 'button' | 'wheel' | 'touch-zone' | 'key'
+  x: number
+  y: number
+  triggers: ActionTrigger[]
+  defaultActions: Partial<Record<ActionTrigger, string>>
+}
+
+export interface CommunityDeviceManifest {
+  format: 'orbit-device'
+  version: 1
+  id: string
+  name: string
+  vendor: string
+  model: string
+  kind: DeviceKind
+  imageDataUrl: string
+  controls: VisualControlDefinition[]
+  capabilityIds: string[]
+  actionDefinitions: DeviceActionDefinition[]
+  customActions: CustomActionDefinition[]
+  settingsSections: DeviceSettingsSection[]
+  createdAt: string
+  updatedAt: string
+}
+
 export type SettingValue = boolean | number | string
 
 export type DeviceSettingField =
@@ -58,6 +93,7 @@ export interface DeviceSnapshot {
   battery: number | null
   firmware?: string
   capabilities: DeviceCapability[]
+  actions: DeviceActionDefinition[]
   settingsSections: DeviceSettingsSection[]
   settingDefaults?: Record<string, SettingValue>
 }
@@ -119,6 +155,7 @@ export interface DriverInfo {
   source: 'core' | 'community'
   deviceKinds: DeviceKind[]
   supportedModels: string[]
+  contributedActions: DeviceActionDefinition[]
 }
 
 export interface ScanResult {
@@ -144,6 +181,10 @@ export interface OrbitBridge {
   listDrivers(): Promise<DriverInfo[]>
   openDriverDocs(): Promise<{ ok: boolean; message?: string }>
   openDriverFolder(): Promise<{ ok: boolean; message?: string }>
+  listDeviceManifests(): Promise<CommunityDeviceManifest[]>
+  saveDeviceManifest(manifest: CommunityDeviceManifest): Promise<{ ok: boolean; message?: string }>
+  deleteDeviceManifest(manifestId: string): Promise<{ ok: boolean; message?: string }>
+  exportDeviceManifest(manifest: CommunityDeviceManifest): Promise<{ ok: boolean; path?: string; message?: string }>
   minimizeWindow(): void
   closeWindow(): void
   getPlatform(): Promise<NodeJS.Platform>

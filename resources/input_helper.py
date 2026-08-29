@@ -19,19 +19,9 @@ KEYS = [
     e.BTN_MIDDLE,
 ]
 
-# Declare the supported shortcut vocabulary once so user-defined shortcuts can
-# be emitted without rebuilding the virtual device. Avoid kernel sentinel codes
-# such as KEY_MAX, which uinput correctly rejects.
-SHORTCUT_KEY_NAMES = [
-    "LEFTALT", "LEFTCTRL", "LEFTSHIFT", "LEFTMETA",
-    "RIGHTALT", "RIGHTCTRL", "RIGHTSHIFT", "RIGHTMETA",
-    "ESC", "ENTER", "SPACE", "TAB", "BACKSPACE", "DELETE", "INSERT",
-    "HOME", "END", "PAGEUP", "PAGEDOWN", "LEFT", "RIGHT", "UP", "DOWN",
-    "PRINT", "MUTE", "VOLUMEUP", "VOLUMEDOWN",
-    "MINUS", "EQUAL", "LEFTBRACE", "RIGHTBRACE", "SEMICOLON", "APOSTROPHE",
-    "GRAVE", "BACKSLASH", "COMMA", "DOT", "SLASH",
-] + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + list("0123456789") + [f"F{number}" for number in range(1, 13)]
-KEYS = sorted({getattr(e, f"KEY_{name}") for name in SHORTCUT_KEY_NAMES} | {e.BTN_MIDDLE})
+# Linux accepts every key bit from 1 through KEY_MAX. KEY_CNT is a sentinel one
+# past that range and must never be advertised (it causes uinput EINVAL).
+KEYS = list(range(1, e.KEY_MAX + 1))
 
 SHORTCUT_ALIASES = {
     "CTRL": "LEFTCTRL", "CONTROL": "LEFTCTRL",
@@ -85,6 +75,8 @@ def shortcut_keys(shortcut: str) -> list[int] | None:
             normalized = normalized
         elif not re.fullmatch(r"[A-Z0-9_]+", normalized):
             return None
+        if normalized.startswith("KEY_"):
+            normalized = normalized[4:]
         code = e.ecodes.get(f"KEY_{normalized}")
         if not isinstance(code, int):
             return None

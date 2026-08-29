@@ -119,6 +119,7 @@ export class LogitechHidppAdapter implements DeviceAdapter {
         accessMessage: `Verified as ${this.session?.deviceName ?? 'MX Master 4'} through HID++ device identity, controls, and haptics.`,
         battery: this.battery,
         capabilities: MX_MASTER_4_CAPABILITIES,
+        actions: [],
         settingsSections: MX_MASTER_4_SETTINGS_SECTIONS
     }
   }

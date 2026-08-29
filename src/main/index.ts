@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, screen, shell, Tray } from 'electron'
 import { join } from 'node:path'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises'
 import { DeviceRegistry } from './hardware/registry'
 import { ActionExecutor } from './actionExecutor'
 import { TriggerResolver } from './triggerResolver'
@@ -8,7 +8,7 @@ import { getKdeCursorPosition } from './kdeCursor'
 import { log } from './logger'
 import { parseOrbitProfile } from './profile'
 import { DEFAULT_SETTINGS } from '../shared/mxMaster4'
-import type { ButtonBinding, DeviceSettings, DeviceSnapshot, HapticWaveform, OrbitProfile, ScanResult } from '../shared/device'
+import type { ButtonBinding, CommunityDeviceManifest, DeviceSettings, DeviceSnapshot, HapticWaveform, OrbitProfile, ScanResult } from '../shared/device'
 import type { CapturedControl } from './hardware/adapter'
 
 let mainWindow: BrowserWindow | undefined
@@ -198,7 +198,17 @@ async function executeAction(actionId: string, source: string): Promise<void> {
     return
   }
   const customAction = activeSettings.customActions.find((action) => action.id === actionId)
-  const result = await actionExecutor.execute(actionId, customAction)
+  let result: { ok: boolean; message?: string }
+  if (activeDeviceId && registry.isDriverAction(activeDeviceId, actionId)) {
+    try {
+      await registry.runAction(activeDeviceId, actionId)
+      result = { ok: true }
+    } catch (error) {
+      result = { ok: false, message: error instanceof Error ? error.message : 'Driver action failed.' }
+    }
+  } else {
+    result = await actionExecutor.execute(actionId, customAction)
+  }
   log('action_executed', { actionId, source, ok: result.ok, message: result.message })
   if (result.ok) {
     try { await playHaptic('damp-state-change') } catch (error) {
@@ -215,6 +225,44 @@ function profileFilename(device: DeviceSnapshot): string {
 async function openLocalPath(path: string): Promise<{ ok: boolean; message?: string }> {
   const message = await shell.openPath(path)
   return message ? { ok: false, message } : { ok: true }
+}
+
+function deviceManifestDirectory(): string {
+  return join(app.getPath('userData'), 'community-devices')
+}
+
+function validateDeviceManifest(value: unknown): CommunityDeviceManifest {
+  const manifest = value as Partial<CommunityDeviceManifest>
+  if (!manifest || typeof manifest !== 'object' || manifest.format !== 'orbit-device' || manifest.version !== 1) throw new Error('Unsupported device definition.')
+  if (!manifest.id?.match(/^[a-z0-9][a-z0-9._-]{2,80}$/)) throw new Error('The device definition has an invalid ID.')
+  if (!manifest.name?.trim() || !manifest.model?.trim() || !manifest.vendor?.trim()) throw new Error('Device name, vendor, and model are required.')
+  if (manifest.kind !== 'mouse' && manifest.kind !== 'keyboard') throw new Error('The device kind is invalid.')
+  if (!manifest.imageDataUrl?.startsWith('data:image/') || manifest.imageDataUrl.length > 18_000_000) throw new Error('The device image is missing or too large.')
+  const triggers = new Set(['press', 'double-press', 'long-press'])
+  const controlTypes = new Set(['button', 'wheel', 'touch-zone', 'key'])
+  if (!Array.isArray(manifest.controls) || manifest.controls.some((control) =>
+    !control || !control.id?.match(/^[a-z0-9][a-z0-9._-]{0,80}$/) || typeof control.label !== 'string' ||
+    !controlTypes.has(control.type) ||
+    typeof control.x !== 'number' || control.x < 0 || control.x > 100 ||
+    typeof control.y !== 'number' || control.y < 0 || control.y > 100 ||
+    !Array.isArray(control.triggers) || control.triggers.some((trigger) => !triggers.has(trigger)) ||
+    !control.defaultActions || typeof control.defaultActions !== 'object')) throw new Error('One or more visual controls are invalid.')
+  if (!Array.isArray(manifest.capabilityIds) || !Array.isArray(manifest.actionDefinitions) || !Array.isArray(manifest.customActions) || !Array.isArray(manifest.settingsSections)) {
+    throw new Error('The device capability schema is invalid.')
+  }
+  return manifest as CommunityDeviceManifest
+}
+
+async function listDeviceManifests(): Promise<CommunityDeviceManifest[]> {
+  const directory = deviceManifestDirectory()
+  await mkdir(directory, { recursive: true })
+  const entries = await readdir(directory, { withFileTypes: true })
+  const loaded = await Promise.all(entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.orbit-device.json'))
+    .map(async (entry) => {
+      try { return validateDeviceManifest(JSON.parse(await readFile(join(directory, entry.name), 'utf8'))) } catch { return null }
+    }))
+  return loaded.filter((manifest): manifest is CommunityDeviceManifest => manifest !== null)
 }
 
 function handleCapturedControl(control: CapturedControl): void {
@@ -370,6 +418,45 @@ app.whenReady().then(async () => {
       : join(app.getAppPath(), 'src', 'main', 'community-drivers')
     await mkdir(path, { recursive: true })
     return openLocalPath(path)
+  })
+  ipcMain.handle('orbit:list-device-manifests', () => listDeviceManifests())
+  ipcMain.handle('orbit:save-device-manifest', async (_event, value: unknown) => {
+    try {
+      const manifest = validateDeviceManifest(value)
+      const directory = deviceManifestDirectory()
+      await mkdir(directory, { recursive: true })
+      await writeFile(join(directory, `${manifest.id}.orbit-device.json`), JSON.stringify(manifest, null, 2), 'utf8')
+      log('device_manifest_saved', { id: manifest.id, controls: manifest.controls.length, capabilities: manifest.capabilityIds.length })
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'Could not save the device definition.' }
+    }
+  })
+  ipcMain.handle('orbit:delete-device-manifest', async (_event, manifestId: string) => {
+    if (!manifestId.match(/^[a-z0-9][a-z0-9._-]{2,80}$/)) return { ok: false, message: 'Invalid device definition ID.' }
+    try {
+      await unlink(join(deviceManifestDirectory(), `${manifestId}.orbit-device.json`))
+      log('device_manifest_deleted', { id: manifestId })
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'Could not delete the device definition.' }
+    }
+  })
+  ipcMain.handle('orbit:export-device-manifest', async (_event, value: unknown) => {
+    try {
+      const manifest = validateDeviceManifest(value)
+      const options = {
+        title: 'Export Orbit device definition',
+        defaultPath: join(app.getPath('documents'), `${manifest.id}.orbit-device.json`),
+        filters: [{ name: 'Orbit device definition', extensions: ['json'] }]
+      }
+      const result = mainWindow ? await dialog.showSaveDialog(mainWindow, options) : await dialog.showSaveDialog(options)
+      if (result.canceled || !result.filePath) return { ok: false, message: 'Export cancelled.' }
+      await writeFile(result.filePath, JSON.stringify(manifest, null, 2), 'utf8')
+      return { ok: true, path: result.filePath }
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'Could not export the device definition.' }
+    }
   })
   ipcMain.handle('orbit:test-ring', () => {
     showActionRing()

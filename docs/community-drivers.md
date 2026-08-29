@@ -26,6 +26,31 @@ export default defineCommunityDriver({
 })
 ```
 
+The adapter may also contribute actions to Orbit's action picker. Definitions
+are declarative; execution stays inside the reviewed driver implementation:
+
+```ts
+class MyLogitechAdapter implements DeviceAdapter {
+  readonly actionDefinitions = [
+    {
+      id: 'community.github-user.my-mouse.toggle-layer',
+      label: 'Toggle device layer',
+      detail: 'Switch the onboard control layer',
+      category: 'My Mouse'
+    }
+  ]
+
+  async runAction(deviceId: string, actionId: string): Promise<void> {
+    if (actionId !== this.actionDefinitions[0].id) throw new Error('Unknown action')
+    // Validate deviceId, then perform the device-specific operation.
+  }
+}
+```
+
+Orbit places these in a separate **Device driver** group. Bindings store the
+stable action ID, so contributed actions work with press, double-press, and
+long-press triggers and are included in exported profiles.
+
 Add the exported definition to `src/main/community-drivers/index.ts`. Orbit's
 registry will discover it alongside core drivers. Every snapshot supplies its
 own `settingsSections`, so a mouse without haptics never receives a Haptics tab.
@@ -54,6 +79,7 @@ Control IDs are open strings, so a keyboard driver can expose IDs such as
 - Restore diverted controls when the adapter closes.
 - Emit one `down` and one `up` transition for every diverted button press.
 - Contribute only settings sections the device actually supports.
+- Namespace contributed action IDs and implement `runAction` for every advertised action.
 - Return real telemetry or `null`; never invent battery or firmware values.
 - Document tested connection modes and hardware revisions.
 - Include transport-level tests or captured protocol fixtures where possible.
@@ -61,3 +87,25 @@ Control IDs are open strings, so a keyboard driver can expose IDs such as
 Drivers are registered at build time so their source and hardware permissions
 can be reviewed. A future community catalog can distribute reviewed driver
 packages without turning the desktop app into an arbitrary-code downloader.
+Copy `src/main/community-drivers/driver-template.ts.example` to start a driver.
+
+## Visual device definitions
+
+The **Devices & extensions → Add device definition** builder creates a portable
+`.orbit-device.json` manifest. It embeds the chosen device photo and stores
+marker positions as image-relative percentages, so the map scales without
+hard-coded pixel coordinates.
+
+Each visual control declares:
+
+- A stable driver-facing control ID and human label.
+- Button, wheel, touch-zone, or keyboard-key semantics.
+- Supported press, double-press, and long-press triggers.
+- Optional default actions for every supported trigger.
+
+The manifest also contains capability IDs, generated settings sections, and
+driver-contributed action declarations. Selecting a capability only declares
+that the future driver may implement it; Orbit never presents invented
+telemetry or sends guessed hardware commands. The adapter remains responsible
+for matching hardware, emitting the manifest's control IDs, returning real
+telemetry, applying declared settings, and implementing contributed actions.

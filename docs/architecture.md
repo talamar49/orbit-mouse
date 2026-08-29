@@ -13,6 +13,13 @@ React renderer
 
 The renderer consumes `DeviceSnapshot` and `DeviceCapability` values only. It does not inspect product IDs, build HID packets, or assume that every mouse has haptics, SmartShift, a thumb wheel, or the same number of controls.
 
+Visual device definitions are separate from hardware transport. A portable
+manifest owns the product image, percentage-based control markers, trigger
+support, default action IDs, settings schema, and action declarations. A
+reviewed adapter later connects those stable IDs to real HID events. This lets
+community authors design and share the complete UI contract before hardware
+I/O is implemented without pretending the device is functional.
+
 Each hardware family implements `DeviceAdapter`:
 
 - `discover()` identifies devices and advertises capabilities.

@@ -1,4 +1,4 @@
-import type { ControlId, DeviceKind, DeviceSettings, DeviceSnapshot, HapticWaveform } from '../../shared/device'
+import type { ControlId, DeviceActionDefinition, DeviceKind, DeviceSettings, DeviceSnapshot, HapticWaveform } from '../../shared/device'
 
 export interface CapturedControl {
   controlId: ControlId
@@ -11,9 +11,11 @@ export interface DeviceAdapter {
   readonly name?: string
   readonly deviceKinds?: readonly DeviceKind[]
   readonly supportedModels?: readonly string[]
+  readonly actionDefinitions?: readonly DeviceActionDefinition[]
   discover(): Promise<DeviceSnapshot[]>
   saveSettings(deviceId: string, settings: DeviceSettings): Promise<void>
   playHaptic?(deviceId: string, waveform: HapticWaveform, intensity: number): Promise<void>
   runCommand?(deviceId: string, commandId: string, settings: DeviceSettings): Promise<void>
+  runAction?(deviceId: string, actionId: string): Promise<void>
   close?(): Promise<void>
 }

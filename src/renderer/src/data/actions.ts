@@ -9,12 +9,13 @@ import {
   LayoutGrid,
   MonitorUp,
   MousePointer2,
+  Puzzle,
   Search,
   Sparkles,
   ZoomIn
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import type { CustomActionDefinition } from '../../../shared/device'
+import type { CustomActionDefinition, DeviceActionDefinition } from '../../../shared/device'
 
 export interface ActionOption {
   id: string
@@ -49,6 +50,10 @@ export function customActionOption(action: CustomActionDefinition): ActionOption
     icon: action.type === 'shortcut' ? Keyboard : AppWindow,
     category: 'Custom'
   }
+}
+
+export function driverActionOption(action: DeviceActionDefinition): ActionOption {
+  return { ...action, icon: Puzzle, category: action.category ?? 'Device driver' }
 }
 
 export function findActionOption(actionId: string, customActions: readonly CustomActionDefinition[]): ActionOption | undefined {

@@ -22,6 +22,7 @@ const browserDevice: DeviceSnapshot = {
   accessMessage: 'Bolt receiver found, but Linux HID permissions are restricted. Configuration is saved locally until access is granted.',
   battery: 86,
   capabilities: MX_MASTER_4_CAPABILITIES,
+  actions: [],
   settingsSections: MX_MASTER_4_SETTINGS_SECTIONS
 }
 
@@ -316,7 +317,7 @@ export default function App(): React.JSX.Element {
               onDeleteCustomAction={deleteCustomAction}
             />
           )}
-          {page === 'devices' && <DevicesPage device={device} onNotice={setToast} />}
+          {page === 'devices' && <DevicesPage device={device} customActions={settings.customActions} onNotice={setToast} />}
         </div>
       </main>
 
@@ -326,8 +327,10 @@ export default function App(): React.JSX.Element {
           trigger={pickerTrigger}
           currentBinding={currentBinding}
           customActions={settings.customActions}
+          driverActions={device.actions}
           onSelect={selectAction}
           onCreate={createCustomAction}
+          onUpdate={updateCustomAction}
           onRemove={removeAction}
           onClose={() => setPickerOpen(false)}
         />
