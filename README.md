@@ -50,6 +50,16 @@ npm run build
 
 Output is written to `out/` for the Electron main, preload, and renderer bundles.
 
+To create a portable Linux AppImage:
+
+```bash
+npm run build:linux
+```
+
+The AppImage is written to `release/`. Pushes to `main` run the same Linux build
+in GitHub Actions, upload the AppImage to the workflow run, and increment the
+patch version after a successful build.
+
 ## Hardware facts used
 
 The MX Master 4 profile is based on Logitech's published specification: six programmable controls, a 200–8,000 DPI Darkfield sensor in 50 DPI increments, MagSpeed/SmartShift, thumb wheel, Easy-Switch, and a Haptic Sense panel. Haptics use HID++ feature `0x19B0`, whose verified waveforms are `DampStateChange` (`1`) and `SubtleCollision` (`4`). Logitech has not published that feature in the public HID++ specification, so Orbit treats its implementation as device-tested, reverse-engineered behavior.
