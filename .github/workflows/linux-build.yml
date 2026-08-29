@@ -69,3 +69,15 @@ jobs:
           git commit -m "chore: bump version to ${VERSION} [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" release/*.AppImage \
+            --repo "$GITHUB_REPOSITORY" \
+            --target main \
+            --title "Orbit Mouse Studio v${VERSION}" \
+            --generate-notes

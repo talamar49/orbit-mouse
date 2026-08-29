@@ -57,8 +57,8 @@ npm run build:linux
 ```
 
 The AppImage is written to `release/`. Pushes to `main` run the same Linux build
-in GitHub Actions, upload the AppImage to the workflow run, and increment the
-patch version after a successful build.
+in GitHub Actions, increment the patch version after a successful build, and
+publish the AppImage on both the workflow run and a versioned GitHub Release.
 
 ## Hardware facts used
 
