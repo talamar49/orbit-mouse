@@ -24,20 +24,26 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 22.12.0
           cache: npm
 
-      - name: Bump patch version
+      - name: Create version commit
         id: version
         shell: bash
         run: |
           npm version patch --no-git-tag-version
           version=$(node -p "require('./package.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${version} [skip ci]"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Install Linux build dependencies
         run: |
@@ -68,16 +74,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Commit version bump
+      - name: Publish version commit
         shell: bash
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${VERSION} [skip ci]"
-          git pull --rebase origin main
+          gh auth setup-git
           git push origin HEAD:main
 
       - name: Publish GitHub release
@@ -85,11 +87,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
+          BUILD_SHA: ${{ steps.version.outputs.build_sha }}
         run: |
           gh release create "v${VERSION}" \
             release/*.AppImage release/*.deb release/*.rpm \
             release/install-linux-permissions.sh release/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
-            --target main \
+            --target "$BUILD_SHA" \
             --title "Orbit Mouse Studio v${VERSION}" \
             --generate-notes

@@ -1,5 +1,5 @@
 import type { ControlId } from '../../../shared/device'
-import mouseImage from '../assets/mx-master-4-space-black.png'
+import mouseImage from '../assets/orbit-ergonomic-mouse.svg'
 
 interface MouseVisualProps {
   activeControl: ControlId
@@ -11,10 +11,10 @@ const hotspots: Array<{ id: ControlId; x: number; y: number; label: string; n: n
   { id: 'middle', x: 21.0, y: 49.0, label: 'Middle button on the main scroll wheel', n: 1 },
   { id: 'mode-shift', x: 43.0, y: 31.2, label: 'Top button', n: 2 },
   { id: 'haptic-panel', x: 76.0, y: 60.0, label: 'Haptic Sense panel', n: 3 },
-  { id: 'thumbwheel', x: 69.0, y: 32.5, label: 'Horizontal thumb wheel', n: 4 },
+  { id: 'thumbwheel', x: 64.8, y: 31.8, label: 'Horizontal thumb wheel', n: 4 },
   { id: 'gesture', x: 56.0, y: 55.0, label: 'Gesture button', n: 5 },
-  { id: 'forward', x: 65.0, y: 47.4, label: 'Forward', n: 6 },
-  { id: 'back', x: 72.0, y: 41.8, label: 'Back', n: 7 }
+  { id: 'forward', x: 61.5, y: 49.5, label: 'Forward', n: 6 },
+  { id: 'back', x: 70.5, y: 39.5, label: 'Back', n: 7 }
 ]
 
 export function MouseVisual({ activeControl, onControlSelect, hapticPulse }: MouseVisualProps): React.JSX.Element {
@@ -22,7 +22,7 @@ export function MouseVisual({ activeControl, onControlSelect, hapticPulse }: Mou
     <div className={`mouse-stage ${hapticPulse ? 'haptic-pulse' : ''}`}>
       <div className="mouse-aura" />
       <div className="mouse-ground-shadow" />
-      <img className="mouse-product-image" src={mouseImage} alt="Logitech MX Master 4 for Mac in Space Black" draggable={false} />
+      <img className="mouse-product-image" src={mouseImage} alt="Orbit original ergonomic mouse control diagram" draggable={false} />
 
       {hotspots.map((spot) => (
         <button

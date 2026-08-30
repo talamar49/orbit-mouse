@@ -16,7 +16,7 @@ printf '%s\n' \
   '# Orbit Mouse Studio — scoped HID++ access for Logitech MX devices.' \
   '# Bolt USB receiver.' \
   'SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c548", MODE="0660", GROUP="plugdev", TAG+="uaccess"' \
-  '# Direct Bluetooth Low Energy HID++ devices from Logitech (Bluetooth bus 0005).' \
+  '# Direct Logitech Bluetooth hidraw endpoints (Bluetooth bus 0005).' \
   'SUBSYSTEM=="hidraw", KERNEL=="hidraw*", KERNELS=="0005:046D:*", MODE="0660", GROUP="plugdev", TAG+="uaccess"' \
   > /etc/udev/rules.d/60-orbit-logitech-bolt.rules
 

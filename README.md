@@ -23,7 +23,8 @@ Download the package for your distribution from the **[latest GitHub release](ht
 |---|---|---|
 | Any modern x86-64 Linux | `.AppImage` | `chmod +x Orbit-Mouse-Studio-*.AppImage && ./Orbit-Mouse-Studio-*.AppImage` |
 | Ubuntu, Debian, Mint, Pop!_OS | `.deb` | `sudo apt install ./Orbit-Mouse-Studio-*.deb` |
-| Fedora, RHEL, Rocky, openSUSE | `.rpm` | `sudo dnf install ./Orbit-Mouse-Studio-*.rpm` |
+| Fedora, RHEL, Rocky | `.rpm` | `sudo dnf install ./Orbit-Mouse-Studio-*.rpm` |
+| openSUSE | `.rpm` | `sudo zypper install ./Orbit-Mouse-Studio-*.rpm` |
 
 Every release includes `SHA256SUMS.txt`. Verify a download with:
 
@@ -33,7 +34,7 @@ sha256sum --check SHA256SUMS.txt --ignore-missing
 
 ### Grant device access
 
-Orbit needs narrowly scoped access to Logitech HID++ endpoints and Linux `uinput`. Review and run the included permission installer once, then reconnect the mouse or Logi Bolt receiver:
+Orbit needs direct access to Logitech HID endpoints and Linux `uinput`. Review and run the included permission installer once, then reconnect the mouse or Logi Bolt receiver:
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/talamar49/orbit-mouse/main/resources/install-linux-permissions.sh
@@ -41,7 +42,9 @@ less install-linux-permissions.sh
 sudo bash install-linux-permissions.sh
 ```
 
-The installer only adds rules for the Logitech Bolt receiver (`046d:c548`), Logitech Bluetooth HID++ devices, and `/dev/uinput`. If it adds your user to `plugdev`, log out and back in once.
+The installer grants `plugdev` access to the supported Bolt receiver (`046d:c548`), direct Logitech Bluetooth `hidraw` endpoints, and `/dev/uinput`. Linux Bluetooth device paths do not expose enough model detail for udev to limit the direct-device rule to MX Master 4 alone; Orbit therefore verifies HID++ device identity in the adapter before enabling device writes.
+
+> **Trust boundary:** membership in `plugdev` plus write access to `/dev/uinput` allows processes running as that user to inject keyboard and pointer events. This is required for global remapping and cannot be restricted to one desktop application through udev alone. Only install the rules on a trusted personal machine. If the installer adds your user to `plugdev`, log out and back in once.
 
 If an AppImage reports that `libfuse.so.2` is missing, either install your distribution's FUSE 2 compatibility package or run it with `APPIMAGE_EXTRACT_AND_RUN=1`.
 
@@ -85,7 +88,7 @@ Hardware testers, package maintainers, designers, documentation writers, and dri
 
 ## Development
 
-Requirements: Node.js 22+, npm, `libusb-1.0` development headers, and `libudev` development headers.
+Requirements: Node.js 22.12.0 or newer, npm, `libusb-1.0` development headers, and `libudev` development headers.
 
 ```bash
 git clone https://github.com/talamar49/orbit-mouse.git

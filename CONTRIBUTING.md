@@ -11,7 +11,7 @@ Thanks for helping make advanced peripherals work well on Linux.
 
 ## Development setup
 
-Install Node.js 22+, npm, the `libusb-1.0` development package, and `libudev` development headers.
+Install Node.js 22.12.0 or newer, npm, the `libusb-1.0` development package, and `libudev` development headers.
 
 ```bash
 npm ci
