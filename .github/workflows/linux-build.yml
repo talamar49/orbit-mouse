@@ -65,7 +65,6 @@ jobs:
             release/*.rpm
             release/install-linux-permissions.sh
             release/SHA256SUMS.txt
-          archive: false
           if-no-files-found: error
           retention-days: 30
 
