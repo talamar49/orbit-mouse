@@ -1,16 +1,30 @@
 {
   "name": "orbit-mouse",
   "version": "0.1.2",
-  "description": "A capability-first peripheral configuration studio",
+  "description": "Open-source Logitech MX Master 4 configuration for Linux",
   "desktopName": "orbit-mouse",
+  "homepage": "https://github.com/talamar49/orbit-mouse",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/talamar49/orbit-mouse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/talamar49/orbit-mouse/issues"
+  },
   "main": "./out/main/index.js",
-  "author": "Orbit",
+  "author": {
+    "name": "Tal Amar",
+    "email": "talamar49@users.noreply.github.com"
+  },
   "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
-    "build:linux": "npm run build && electron-builder --linux AppImage --publish never",
+    "build:linux": "npm run build && electron-builder --linux --publish never",
+    "build:appimage": "npm run build && electron-builder --linux AppImage --publish never",
+    "build:deb": "npm run build && electron-builder --linux deb --publish never",
+    "build:rpm": "npm run build && electron-builder --linux rpm --publish never",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
@@ -25,7 +39,7 @@
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
-    "electron": "^38.0.0",
+    "electron": "^44.0.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^4.0.0",
     "typescript": "^5.9.2",
@@ -62,10 +76,14 @@
     ],
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb",
+        "rpm"
       ],
       "category": "Utility",
       "icon": "resources/orbit.png",
+      "maintainer": "Tal Amar <talamar49@users.noreply.github.com>",
+      "vendor": "Orbit Mouse contributors",
       "syncDesktopName": true
     }
   }

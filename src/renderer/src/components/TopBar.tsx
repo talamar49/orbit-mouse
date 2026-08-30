@@ -26,6 +26,7 @@ export function TopBar({ device, scanning, onScan }: TopBarProps): React.JSX.Ele
         {device.access === 'offline' && (
           <span className="access-badge offline"><CircleAlert size={15} /> Device offline</span>
         )}
+        {device.access === 'demo' && <span className="sync-state"><i /> Interactive demo</span>}
         {device.access === 'ready' && <span className="sync-state"><i /> {device.connection === 'bluetooth' ? 'Bluetooth' : 'Logi Bolt'}</span>}
         <span className="battery-state"><BatteryMedium size={18} /> {device.battery === null ? 'Unavailable' : `${device.battery}%`}</span>
         <button className={`icon-button ${scanning ? 'spinning' : ''}`} onClick={onScan} type="button" aria-label="Scan devices">

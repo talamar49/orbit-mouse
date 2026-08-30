@@ -1,0 +1,39 @@
+name: Bug report
+description: Report reproducible Orbit behavior that is not hardware-specific.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      placeholder: Describe the actual and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open...\n2. Select...\n3. Observe..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Orbit version
+      placeholder: v0.1.3
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Linux distribution, desktop, and kernel
+      placeholder: Ubuntu 24.04, KDE Plasma, kernel 6.8
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove credentials and private information before posting.
+      render: shell

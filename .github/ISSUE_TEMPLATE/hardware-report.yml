@@ -1,0 +1,40 @@
+name: Hardware compatibility report
+description: Tell us whether Orbit works with your MX Master 4 setup.
+title: "[Hardware]: MX Master 4 on "
+labels: [hardware testing]
+body:
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution, version, desktop, and kernel
+      placeholder: Fedora 42, GNOME, kernel 6.x
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options: [Logi Bolt, Bluetooth]
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Mouse and receiver firmware
+      placeholder: Include both when available.
+  - type: checkboxes
+    id: results
+    attributes:
+      label: Results
+      options:
+        - label: Device discovery works
+        - label: Battery reading works
+        - label: Button assignments work
+        - label: Double-press and long-press work
+        - label: Haptics work
+        - label: Background actions work after restart
+  - type: textarea
+    id: notes
+    attributes:
+      label: Problems, logs, or notes
+      description: Remove credentials and private information before posting.

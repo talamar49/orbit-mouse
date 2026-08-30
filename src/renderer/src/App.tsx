@@ -91,7 +91,14 @@ export default function App(): React.JSX.Element {
     try {
       const result: ScanResult = window.orbit
         ? await window.orbit.scanDevices()
-        : { devices: [browserDevice], scannedAt: new Date().toISOString() }
+        : {
+            devices: [{
+              ...browserDevice,
+              access: 'demo',
+              accessMessage: 'Interactive browser preview — connect the desktop app to configure real hardware.'
+            }],
+            scannedAt: new Date().toISOString()
+          }
       if (result.devices[0]) {
         setDevice(result.devices[0])
       } else {

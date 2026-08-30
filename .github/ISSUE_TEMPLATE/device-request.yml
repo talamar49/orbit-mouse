@@ -1,0 +1,31 @@
+name: Device support request
+description: Request support for another Logitech mouse or peripheral.
+title: "[Device]: "
+labels: [device support]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Exact model name
+      placeholder: Logitech MX Master 3S
+    validations:
+      required: true
+  - type: textarea
+    id: ids
+    attributes:
+      label: USB, Bluetooth, or receiver identifiers
+      placeholder: Paste sanitized lsusb / hidraw identification details.
+  - type: textarea
+    id: features
+    attributes:
+      label: Features you can help test
+      placeholder: Buttons, thumb wheel, DPI, SmartShift, battery, gestures...
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I can test development builds on this hardware
+        - label: I can help implement a community driver
